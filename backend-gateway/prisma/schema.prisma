@@ -1,0 +1,53 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"] // Allows us to use pgvector
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector] // Enables AI embeddings
+}
+
+// Represents a victim, user, or responder in our system
+model User {
+  id          String       @id @default(uuid())
+  firebaseUid String       @unique
+  email       String       @unique
+  name        String?
+  role        Role         @default(VICTIM)
+  assessments Assessment[]
+  createdAt   DateTime     @default(now())
+}
+
+// Represents a single trauma/stress assessment session
+model Assessment {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // The raw inputs
+  textInput       String?
+  audioUrl        String?
+  
+  // AI calculated scores
+  sviScore        Float?   // Stress Vulnerability Index (0.0 to 10.0)
+  riskLevel       RiskLevel @default(PENDING)
+  
+  createdAt       DateTime @default(now())
+}
+
+enum Role {
+  VICTIM
+  RESPONDER
+  ADMIN
+}
+
+enum RiskLevel {
+  PENDING
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
