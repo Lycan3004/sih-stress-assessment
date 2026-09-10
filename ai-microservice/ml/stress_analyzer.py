@@ -3,7 +3,6 @@ import numpy as np
 import io
 import os
 import soundfile as sf
-from transformers import pipeline
 from google import genai
 from dotenv import load_dotenv
 
@@ -12,13 +11,21 @@ load_dotenv()
 
 class StressAnalyzer:
     def __init__(self):
-        print("🧠 Loading Hugging Face Emotion Model... (This might take a minute on first run)")
-        # We use a fast DistilRoBERTa model fine-tuned on emotion detection
-        self.emotion_classifier = pipeline(
-            "text-classification", 
-            model="j-hartmann/emotion-english-distilroberta-base", 
-            top_k=None # Newer transformers require top_k=None instead of return_all_scores
-        )
+        print("[AI] Initializing Emotion & Stress Analyzer...")
+        self.emotion_classifier = None
+        try:
+            from transformers import pipeline
+            self.emotion_classifier = pipeline(
+                "text-classification", 
+                model="j-hartmann/emotion-english-distilroberta-base", 
+                top_k=None
+            )
+            print("[AI] DistilRoBERTa Emotion Model loaded successfully")
+        except Exception as e:
+            print("[WARN] Hugging Face pipeline could not be initialized:", str(e))
+            print("[INFO] Using built-in NLP emotion scoring and keyword heuristics")
+
+
 
         # Initialize Gemini for highly human-like remedy generation
         self.gemini_key = os.getenv("GEMINI_API_KEY")
@@ -153,18 +160,47 @@ class StressAnalyzer:
         Analyzes text and returns an SVI (Stress Vulnerability Index) from 0.0 to 10.0
         """
         if not text:
-            return {"svi": 0.0, "risk_level": "LOW", "emotions": []}
+            return {"svi_score": 0.0, "risk_level": "LOW", "top_emotion": "neutral", "all_emotions": []}
 
-        # Get emotion scores from the AI
-        raw_results = self.emotion_classifier(text)
-        
-        # Depending on transformers version, it might return a list of lists or just a list
-        results = raw_results[0] if isinstance(raw_results[0], list) else raw_results
-        
-        # Sort emotions by highest score
-        emotions = sorted(results, key=lambda x: x['score'], reverse=True)
-        
+        emotions = []
+        if self.emotion_classifier:
+            try:
+                raw_results = self.emotion_classifier(text)
+                results = raw_results[0] if isinstance(raw_results[0], list) else raw_results
+                emotions = sorted(results, key=lambda x: x['score'], reverse=True)
+            except Exception as e:
+                print("Inference error:", e)
+
+        # Fallback keyword-based emotion analysis if model classifier is unavailable
+        if not emotions:
+            text_lower = text.lower()
+            fear_keywords = ["fear", "scared", "terrified", "panic", "danger", "trapped", "help", "afraid", "threat", "run", "hiding"]
+            sadness_keywords = ["sad", "crying", "depressed", "hopeless", "grief", "pain", "hurt", "lonely", "lost", "broken"]
+            anger_keywords = ["angry", "furious", "mad", "rage", "hate", "attack", "kill", "fight"]
+            
+            fear_hits = sum(1 for w in fear_keywords if w in text_lower)
+            sad_hits = sum(1 for w in sadness_keywords if w in text_lower)
+            anger_hits = sum(1 for w in anger_keywords if w in text_lower)
+            
+            total_hits = fear_hits + sad_hits + anger_hits
+            if total_hits > 0:
+                emotions = [
+                    {"label": "fear", "score": round(fear_hits / max(1, total_hits), 2)},
+                    {"label": "sadness", "score": round(sad_hits / max(1, total_hits), 2)},
+                    {"label": "anger", "score": round(anger_hits / max(1, total_hits), 2)},
+                    {"label": "neutral", "score": 0.1}
+                ]
+            else:
+                emotions = [
+                    {"label": "neutral", "score": 0.8},
+                    {"label": "fear", "score": 0.05},
+                    {"label": "sadness", "score": 0.05},
+                    {"label": "anger", "score": 0.05}
+                ]
+            emotions = sorted(emotions, key=lambda x: x['score'], reverse=True)
+
         # SVI Weighting System (0 to 1 scale)
+
         # Fear, Sadness, and Anger contribute heavily to trauma/stress SVI
         weights = {
             "fear": 1.0,

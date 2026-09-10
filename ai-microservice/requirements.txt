@@ -6,3 +6,6 @@ transformers
 librosa
 torch
 python-dotenv
+google-genai
+soundfile
+python-multipart
