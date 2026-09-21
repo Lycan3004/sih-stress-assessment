@@ -1,4 +1,4 @@
-# 🚨 Real-Time Stress & Trauma Assessment Platform
+# 🚨 Samvedna [NHAA] - Real-Time Stress & Trauma Assessment Platform
 
 ![Hackathon](https://img.shields.io/badge/Smart_India_Hackathon-Ready-emerald?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -6,11 +6,13 @@
 ![Python](https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
-An advanced, multi-modal AI crisis intervention platform designed to assess psychological stress, detect emergencies, and provide immediate, autonomous counseling while routing critical alerts to emergency responders in real-time.
+**Samvedna [NHAA]** is an advanced, trauma-informed, multi-modal crisis intervention and stress assessment module. It acts as an empathetic sanctuary for trauma victims while compiling clinical diagnostic assessments strictly for authorized crisis administrators in real-time.
 
 ---
 
 ## ✨ Key Features
+
+*   🗣️ **Samvedna [NHAA] Trauma Sanctuary**: Provides deeply empathetic, conversational guidance with per-message distress indices, physiological sigh grounding, and emergency helplines. Diagnostic reports remain confidential and are routed strictly to authorized admins.
 
 *   🗣️ **Multi-Modal AI Analysis**: Combines NLP text classification (Hugging Face `DistilRoBERTa`) with physical acoustic analysis using `librosa` to detect vocal tremors, pitch instability, and jitter in the victim's voice.
 *   🧠 **Generative Crisis Counselor**: Powered by Google's `gemini-3.6-flash`, the chatbot retains conversation history and generates highly empathetic, context-aware, and actionable survival advice.
@@ -64,7 +66,19 @@ ADMIN_EMAIL="admin@yourdomain.com"
 GEMINI_API_KEY="your_google_gemini_api_key"
 ```
 
-### 3. Installation & Boot Sequence
+### ⚡ Quick Start (1-Click Startup)
+
+Simply double-click `run.bat` in the project root (or run `.\run.bat` in terminal). It automatically boots:
+- The **Python AI Microservice** (port 8000)
+- The **Node.js Gateway** (port 4000)
+- The **React Frontend** (port 5173)
+- Automatically launches your browser to `http://localhost:5173/assessment`!
+
+To stop all services anytime, run `stop.bat`.
+
+---
+
+### 3. Manual Installation & Boot Sequence (Alternative)
 
 **Terminal 1: Node.js API Gateway**
 ```bash

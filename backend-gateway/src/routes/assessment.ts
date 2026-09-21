@@ -32,11 +32,10 @@ router.post('/', verifyToken, async (req: AuthRequest, res: Response): Promise<v
 
     // Create the assessment record
     const assessment = await prisma.assessment.create({
-      
       data: {
         userId: user.id,
-        textInput,
-        sviScore,
+        textInput: typeof req.body.textInput === 'object' ? JSON.stringify(req.body.textInput) : req.body.textInput,
+        sviScore: typeof sviScore === 'number' ? sviScore : parseFloat(sviScore) || 5.0,
         riskLevel
       }
     });
@@ -50,17 +49,17 @@ router.post('/', verifyToken, async (req: AuthRequest, res: Response): Promise<v
       const mailOptions = {
         from: process.env.EMAIL_USER || 'system@sih.com',
         to: process.env.ADMIN_EMAIL || 'admin@sih.com', // Where alerts should go
-        subject: '🚨 URGENT: Critical Stress Level Detected!',
+        subject: '🚨 URGENT: Critical Stress Level Detected by Samvedna [NHAA]!',
         html: `
-          <h2 style="color: #d32f2f;">EMERGENCY ALERT: CRITICAL RISK DETECTED</h2>
+          <h2 style="color: #d32f2f;">EMERGENCY ALERT: CRITICAL RISK DETECTED BY SAMVEDNA [NHAA]</h2>
           <p><strong>User Email:</strong> ${user.email}</p>
           <p><strong>Stress Score:</strong> <span style="color: red; font-weight: bold;">${sviScore}/10.0</span></p>
           <p><strong>GPS Coordinates:</strong> ${locationLink}</p>
           <hr />
           <p><strong>Victim Transcript:</strong><br/>
-          <em>"${textInput}"</em></p>
+          <em>"${typeof textInput === 'string' ? textInput : JSON.stringify(textInput)}"</em></p>
           <br/>
-          <p>Please check the admin dashboard and dispatch resources immediately.</p>
+          <p>Please check the admin command center and dispatch resources immediately.</p>
         `
       };
       
@@ -70,9 +69,14 @@ router.post('/', verifyToken, async (req: AuthRequest, res: Response): Promise<v
     }
 
     const io = req.app.get('io');
-    if(io) io.emit('new_assessment', { ...assessment, user: user });
+    if(io) io.emit('new_assessment', { 
+      ...assessment, 
+      user: user, 
+      location, 
+      reportData: req.body.reportData || null 
+    });
 
-    res.status(201).json(assessment);
+    res.status(201).json({ ...assessment, reportData: req.body.reportData });
   } catch (error) {
     console.error('Save Assessment Error:', error);
     res.status(500).json({ error: 'Failed to save assessment' });
