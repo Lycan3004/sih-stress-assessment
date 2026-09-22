@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import confetti from 'canvas-confetti';
 import { auth } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 import {
   Mic,
   MicOff,
@@ -57,7 +58,7 @@ export const SUPPORTED_SPEECH_LANGUAGES: SpeechLanguage[] = [
   { code: 'ml-IN', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳', category: 'Indian' },
   { code: 'pa-IN', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳', category: 'Indian' },
   { code: 'ur-IN', name: 'Urdu', nativeName: 'اردو', flag: '🇮🇳', category: 'Indian' },
-  
+
   // 🌍 Global Major Languages
   { code: 'en-US', name: 'English (US)', nativeName: 'English (US)', flag: '🇺🇸', category: 'Global' },
   { code: 'en-GB', name: 'English (UK)', nativeName: 'English (UK)', flag: '🇬🇧', category: 'Global' },
@@ -124,6 +125,7 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
 }
 
 export default function Assessment() {
+  const navigate = useNavigate();
   const [text, setText] = useState('');
   const [interimText, setInterimText] = useState('');
 
@@ -145,7 +147,7 @@ export default function Assessment() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
-  
+
   const [isListening, setIsListening] = useState(false);
   const isListeningRef = useRef(false);
   const [loading, setLoading] = useState(false);
@@ -194,16 +196,16 @@ export default function Assessment() {
     return () => {
       // Clean up recognition and audio processor on unmount
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch (e) {}
+        try { recognitionRef.current.stop(); } catch (e) { }
       }
       if (audioProcessorRef.current) {
-        try { audioProcessorRef.current.disconnect(); } catch (e) {}
+        try { audioProcessorRef.current.disconnect(); } catch (e) { }
       }
       if (audioStreamRef.current) {
         audioStreamRef.current.getTracks().forEach(t => t.stop());
       }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        try { audioContextRef.current.close(); } catch (e) {}
+        try { audioContextRef.current.close(); } catch (e) { }
       }
     };
   }, []);
@@ -254,13 +256,13 @@ export default function Assessment() {
       try {
         recognitionRef.current.onend = null;
         recognitionRef.current.stop();
-      } catch (e) {}
+      } catch (e) { }
       recognitionRef.current = null;
     }
 
     // Disconnect Web Audio processor & tracks
     if (audioProcessorRef.current) {
-      try { audioProcessorRef.current.disconnect(); } catch (e) {}
+      try { audioProcessorRef.current.disconnect(); } catch (e) { }
       audioProcessorRef.current = null;
     }
     if (audioStreamRef.current) {
@@ -268,7 +270,7 @@ export default function Assessment() {
       audioStreamRef.current = null;
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      try { await audioContextRef.current.close(); } catch (e) {}
+      try { await audioContextRef.current.close(); } catch (e) { }
       audioContextRef.current = null;
     }
 
@@ -360,7 +362,7 @@ export default function Assessment() {
     if (SpeechRecognition) {
       try {
         const recognition = new SpeechRecognition();
-        recognition.continuous = false; // Prevents Chrome persistent socket drop/network crashes
+        recognition.continuous = true; // Listen continuously to prevent dropping words during pauses
         recognition.interimResults = true;
         recognition.lang = selectedLang;
 
@@ -396,7 +398,7 @@ export default function Assessment() {
           if (isListeningRef.current && recognitionRef.current) {
             try {
               recognitionRef.current.start();
-            } catch (err) {}
+            } catch (err) { }
           }
         };
 
@@ -559,7 +561,7 @@ export default function Assessment() {
           origin: { y: 0.6 },
           colors: ['#0d9488', '#3b82f6', '#6366f1', '#10b981']
         });
-      } catch (e) {}
+      } catch (e) { }
     } catch (err) {
       console.warn('Session handover transmitted to admin:', err);
     }
@@ -578,7 +580,11 @@ export default function Assessment() {
       <header className="bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 sticky top-0 z-30 shadow-xs transition-all">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* Samvedna [NHAA] Profile */}
-          <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/landingpage')}
+            title="Return to Hub"
+          >
             <div className="relative">
               <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-teal-500 via-blue-600 to-indigo-600 p-[2px] shadow-md shadow-teal-500/20">
                 <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-teal-700 font-extrabold text-xs tracking-wider">
@@ -624,11 +630,10 @@ export default function Assessment() {
               id="conclude-session-btn"
               type="button"
               onClick={handleConcludeSession}
-              className={`px-4 py-2 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all duration-300 shadow-sm cursor-pointer ${
-                userTurnCount >= 2
+              className={`px-4 py-2 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all duration-300 shadow-sm cursor-pointer ${userTurnCount >= 2
                   ? 'bg-gradient-to-r from-teal-600 via-indigo-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white shadow-teal-500/25 animate-pulse scale-102 hover:scale-105'
                   : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300'
-              }`}
+                }`}
               title="Safely conclude session and route stress report to crisis administrators"
             >
               <HeartHandshake className="w-4 h-4 text-teal-300" />
@@ -716,11 +721,10 @@ export default function Assessment() {
 
               {/* Message Bubble */}
               <div
-                className={`max-w-[85%] md:max-w-[80%] rounded-2xl p-4.5 shadow-sm transition-all duration-200 ${
-                  isUser
+                className={`max-w-[85%] md:max-w-[80%] rounded-2xl p-4.5 shadow-sm transition-all duration-200 ${isUser
                     ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 text-white rounded-tr-xs shadow-blue-500/10'
                     : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-xs shadow-slate-200/60'
-                }`}
+                  }`}
               >
                 <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
@@ -756,15 +760,14 @@ export default function Assessment() {
                           </span>
                         )}
                         <div
-                          className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-xs ${
-                            isCritical
+                          className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-xs ${isCritical
                               ? 'bg-red-50 border-red-300 text-red-700 animate-pulse'
                               : isHigh
-                              ? 'bg-orange-50 border-orange-300 text-orange-700'
-                              : isMod
-                              ? 'bg-amber-50 border-amber-300 text-amber-800'
-                              : 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                          }`}
+                                ? 'bg-orange-50 border-orange-300 text-orange-700'
+                                : isMod
+                                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                                  : 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                            }`}
                         >
                           {isCritical && <AlertTriangle className="w-3 h-3 text-red-600" />}
                           {msg.riskLevel} IMPACT
@@ -920,11 +923,10 @@ export default function Assessment() {
                   key={item.code}
                   type="button"
                   onClick={() => handleSelectLanguage(item.code)}
-                  className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                    selectedLang === item.code
+                  className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${selectedLang === item.code
                       ? 'bg-blue-50 text-blue-700 border border-blue-200 font-bold shadow-2xs'
                       : 'bg-white/80 hover:bg-slate-100 text-slate-600 border border-slate-200/70'
-                  }`}
+                    }`}
                 >
                   {item.label}
                 </button>
@@ -963,11 +965,10 @@ export default function Assessment() {
             type="button"
             onClick={handleMicrophone}
             title={isListening ? 'Click to stop speaking' : 'Click to speak (Voice-to-Text & Acoustic Tremor Analysis)'}
-            className={`p-3.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center shrink-0 cursor-pointer ${
-              isListening
+            className={`p-3.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center shrink-0 cursor-pointer ${isListening
                 ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse ring-4 ring-red-200 shadow-md scale-105'
                 : 'bg-white hover:bg-slate-50 text-blue-600 border border-slate-200 hover:border-slate-300 hover:scale-102'
-            }`}
+              }`}
           >
             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-blue-600" />}
           </button>
@@ -1206,11 +1207,10 @@ export default function Assessment() {
                       key={lang.code}
                       type="button"
                       onClick={() => handleSelectLanguage(lang.code)}
-                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                        selectedLang === lang.code
+                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${selectedLang === lang.code
                           ? 'bg-blue-50 border-blue-300 text-blue-800 font-bold shadow-2xs'
                           : 'bg-white hover:bg-slate-50 border-slate-200/80 text-slate-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-base">{lang.flag}</span>
@@ -1240,11 +1240,10 @@ export default function Assessment() {
                       key={lang.code}
                       type="button"
                       onClick={() => handleSelectLanguage(lang.code)}
-                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                        selectedLang === lang.code
+                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${selectedLang === lang.code
                           ? 'bg-blue-50 border-blue-300 text-blue-800 font-bold shadow-2xs'
                           : 'bg-white hover:bg-slate-50 border-slate-200/80 text-slate-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-base">{lang.flag}</span>

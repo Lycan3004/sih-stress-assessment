@@ -10,19 +10,30 @@ import numpy as np
 import soundfile as sf
 from dotenv import load_dotenv
 from google import genai
-from transformers import pipeline
+# from transformers import pipeline (lazy imported in _ensure_classifier / _ensure_asr)
 
 # Load environment variables
-load_dotenv()
+_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+if os.path.exists(_env_path):
+    load_dotenv(dotenv_path=_env_path, override=True)
+else:
+    load_dotenv(override=True)
 
 
 class StressAnalyzer:
     def __init__(self):
         self.emotion_classifier = None
         self.asr_pipeline = None
+        self.local_llm_pipeline = None
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         self.client = None
-        if self.gemini_key:
+        self._ensure_gemini_client()
+
+    def _ensure_gemini_client(self):
+        """Ensure Gemini client is initialized with latest key."""
+        if not self.gemini_key:
+            self.gemini_key = os.getenv("GEMINI_API_KEY")
+        if self.gemini_key and not self.client:
             try:
                 self.client = genai.Client(api_key=self.gemini_key)
                 print("[AI] Gemini Client initialized successfully.")
@@ -32,25 +43,49 @@ class StressAnalyzer:
     def _ensure_classifier(self):
         """Lazy load Hugging Face emotion classification pipeline."""
         if self.emotion_classifier is None:
-            print("[AI] Loading Hugging Face Emotion Model (j-hartmann/emotion-english-distilroberta-base)...")
-            self.emotion_classifier = pipeline(
-                "text-classification",
-                model="j-hartmann/emotion-english-distilroberta-base",
-                top_k=None,
-            )
+            try:
+                print("[AI] Loading Hugging Face Emotion Model (j-hartmann/emotion-english-distilroberta-base)...")
+                from transformers import pipeline
+                self.emotion_classifier = pipeline(
+                    "text-classification",
+                    model="j-hartmann/emotion-english-distilroberta-base",
+                    top_k=None,
+                )
+            except Exception as e:
+                print("[AI] Could not load Hugging Face Emotion Model (fallback active):", e)
+                self.emotion_classifier = None
+
+    def _ensure_local_llm(self):
+        """Lazy load Hugging Face local conversational LLM pipeline (offline fallback only)."""
+        if self.local_llm_pipeline is None:
+            try:
+                import torch
+                print("[AI] Initializing local Conversational LLM (TinyLlama-1.1B — offline fallback)...")
+                from transformers import pipeline
+                self.local_llm_pipeline = pipeline(
+                    "text-generation",
+                    model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+                    device_map="auto",
+                )
+                print("[AI] Local LLM (TinyLlama) initialized as offline fallback.")
+            except Exception as e:
+                print("[AI] Could not initialize local LLM:", e)
+                self.local_llm_pipeline = None
 
     def _ensure_asr(self):
         """Lazy load Hugging Face Whisper ASR pipeline for offline speech recognition."""
         if self.asr_pipeline is None:
             try:
                 print("[AI] Initializing local Whisper ASR (openai/whisper-tiny)...")
+                from transformers import pipeline
                 self.asr_pipeline = pipeline(
                     "automatic-speech-recognition",
                     model="openai/whisper-tiny",
                 )
                 print("[AI] Whisper ASR initialized successfully.")
             except Exception as e:
-                print("[AI] Could not initialize Whisper ASR:", e)
+                print("[AI] Could not initialize Whisper ASR (fallback active):", e)
+                self.asr_pipeline = None
 
     def _decode_audio(self, audio_bytes: bytes) -> Tuple[Optional[np.ndarray], int]:
         """
@@ -147,7 +182,7 @@ class StressAnalyzer:
                     "}"
                 )
 
-                for m_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                for m_name in ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash"]:
                     try:
                         resp = self.client.models.generate_content(
                             model=m_name,
@@ -444,7 +479,8 @@ class StressAnalyzer:
         all_scores = past_scores + [current_turn_score]
 
         # 1. Exponential moving average giving more weight to recent turns while preserving trajectory
-        weights = [0.65 ** (len(all_scores) - 1 - i) for i in range(len(all_scores))]
+        # Changed decay from 0.65 to 0.85 to make long conversation history more impactful on the final score.
+        weights = [0.85 ** (len(all_scores) - 1 - i) for i in range(len(all_scores))]
         weighted_sum = sum(s * w for s, w in zip(all_scores, weights))
         cumulative_svi = weighted_sum / sum(weights)
 
@@ -632,8 +668,9 @@ class StressAnalyzer:
         history = history or []
 
         # ============================================================
-        # 1. TRY GEMINI — FULLY CONTEXT-AWARE CONVERSATION
+        # 1. TRY GEMINI FIRST — Best quality, context-aware conversation
         # ============================================================
+        self._ensure_gemini_client()
         if self.client:
             try:
                 from google.genai import types
@@ -714,7 +751,7 @@ class StressAnalyzer:
                     "Build on what they previously said to show you're truly listening."
                 )
 
-                model_names = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+                model_names = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash"]
                 for m_name in model_names:
                     try:
                         resp = self.client.models.generate_content(
@@ -722,25 +759,94 @@ class StressAnalyzer:
                             contents=contents,
                             config=types.GenerateContentConfig(
                                 system_instruction=system_instruction,
-                                temperature=0.85,
+                                temperature=0.75,
                                 max_output_tokens=300,
                             ),
                         )
                         if resp and resp.text:
                             cleaned = resp.text.replace("*", "").replace("#", "").strip()
                             # Remove any accidental self-identification as AI
-                            for bad in ["As an AI", "as an AI", "I'm an AI", "I am an AI"]:
+                            for bad in ["As an AI", "as an AI", "I'm an AI", "I am an AI", "As a language model"]:
                                 cleaned = cleaned.replace(bad, "")
                             if len(cleaned) > 20:
+                                print(f"[AI] Gemini generated response successfully using {m_name}")
                                 return cleaned.strip()
-                    except Exception:
+                    except Exception as me:
+                        print(f"[AI] Gemini attempt with {m_name} failed: {me}")
                         continue
             except Exception as e:
-                print("[AI] Gemini generation failed, using context-aware fallback:", e)
+                print("[AI] Gemini generation failed, trying local LLM fallback:", e)
 
         # ============================================================
-        # 2. CONTEXT-AWARE FALLBACK (when Gemini is unavailable)
-        #    Extracts topics from user text and builds a relevant reply
+        # 2. LOCAL LLM FALLBACK (offline only — when Gemini is unavailable)
+        # ============================================================
+        self._ensure_local_llm()
+        if self.local_llm_pipeline:
+            try:
+                messages = []
+                system_prompt = (
+                    "You are Samvedna [NHAA], a warm trauma-informed therapist in a live text chat. "
+                    "RULES:\n"
+                    "- Reply ONLY with YOUR response. Do NOT generate the user's words or a script.\n"
+                    "- Keep it 2-3 sentences. Be warm, direct, and reference what the user said.\n"
+                    "- Do NOT use bullet points, lists, or clinical jargon.\n"
+                    "- End with one gentle follow-up question.\n"
+                    "- Never say 'As an AI' or ask who Samvedna is — you ARE Samvedna."
+                )
+                if language and language.lower().startswith("hi"):
+                    system_prompt += "\nRespond in Hindi (Devanagari script) or Hinglish."
+                elif language and language.lower().startswith("es"):
+                    system_prompt += "\nRespond in Spanish."
+                
+                messages.append({"role": "system", "content": system_prompt})
+                
+                for msg in history[-10:]:
+                    role = "user" if msg.get("sender") == "user" else "assistant"
+                    msg_text = msg.get("text", "")
+                    if msg_text.strip():
+                        messages.append({"role": role, "content": msg_text})
+                
+                messages.append({"role": "user", "content": text})
+                
+                prompt = self.local_llm_pipeline.tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+                
+                outputs = self.local_llm_pipeline(
+                    prompt, 
+                    max_new_tokens=200,
+                    do_sample=True,
+                    temperature=0.6,
+                    repetition_penalty=1.15,
+                    top_k=50,
+                    top_p=0.92,
+                    eos_token_id=self.local_llm_pipeline.tokenizer.eos_token_id,
+                    pad_token_id=self.local_llm_pipeline.tokenizer.eos_token_id
+                )
+                
+                generated_text = outputs[0]["generated_text"][len(prompt):].strip()
+                if generated_text:
+                    # Safety: truncate at any hallucinated user/assistant turn markers
+                    for stop_marker in ["\nUser:", "\nuser:", "\nHuman:", "\n<|", "Debasis:", "Patient:"]:
+                        if stop_marker in generated_text:
+                            generated_text = generated_text.split(stop_marker)[0].strip()
+
+                    # Remove any accidental self-identification as AI
+                    for bad in ["As an AI", "as an AI", "I'm an AI", "I am an AI", "As a language model"]:
+                        generated_text = generated_text.replace(bad, "")
+
+                    # Truncate at last complete sentence boundary if text was cut off mid-sentence
+                    last_punct = max(generated_text.rfind('.'), generated_text.rfind('?'), generated_text.rfind('!'))
+                    if last_punct > 25:
+                        generated_text = generated_text[:last_punct + 1].strip()
+
+                    if len(generated_text) > 15:
+                        return generated_text.strip()
+            except Exception as e:
+                print("[AI] Local LLM generation failed, falling back:", e)
+
+        # ============================================================
+        # 3. CONTEXT-AWARE TEMPLATE FALLBACK (when both LLM & Gemini are unavailable)
         # ============================================================
         return self._generate_therapist_engine_response(
             text, emotion, risk_level, turn, cumulative_svi, history, language=language
