@@ -121,7 +121,7 @@ export default function Dashboard() {
           setActiveReport(parsed);
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Otherwise, generate live synthesis from Python AI Microservice on-demand
@@ -246,7 +246,7 @@ VICTIM TRANSCRIPT RECORD:
       <header className="bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 sticky top-0 z-30 shadow-xs transition-all">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* Logo & Admin Identity */}
-          <div 
+          <div
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate('/landingpage')}
             title="Return to Hub"
@@ -282,7 +282,7 @@ VICTIM TRANSCRIPT RECORD:
               <span>Live WebSocket Feed</span>
             </div>
 
-            <button 
+            <button
               onClick={() => navigate('/assessment')}
               className="bg-gradient-to-r from-teal-600 via-indigo-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-102 active:scale-98"
               title="Open Victim Sanctuary Interface"
@@ -307,7 +307,7 @@ VICTIM TRANSCRIPT RECORD:
             <p className="font-bold text-slate-900 flex items-center gap-2">
               Samvedna [NHAA] Real-Time Crisis Intervention & Stress Index Monitoring
               <span className="text-[10px] bg-teal-100/80 text-teal-800 px-2 py-0.5 rounded-full font-mono font-bold">
-                Port 8000 + 4000 Active
+                Active
               </span>
             </p>
             <p className="text-slate-600 leading-relaxed">
@@ -315,25 +315,25 @@ VICTIM TRANSCRIPT RECORD:
             </p>
           </div>
         </div>
-        
+
         {/* KPI Metric Cards (Light Glassmorphic Aesthetic) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {/* Total Cases */}
           <div className="bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs transition-all hover:shadow-md flex items-center gap-4">
             <div className="p-3.5 bg-blue-50 border border-blue-200/70 rounded-2xl text-blue-600 shadow-xs">
-              <Users className="w-6 h-6"/>
+              <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-slate-500 text-xs font-semibold tracking-wider uppercase">Total Sessions</p>
               <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 font-mono mt-0.5">{assessments.length}</h2>
             </div>
           </div>
-          
+
           {/* Critical Alerts */}
           <div className="bg-white/85 backdrop-blur-md border border-rose-200/90 rounded-2xl p-5 shadow-xs transition-all hover:shadow-md flex items-center gap-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-rose-200/30 rounded-full blur-2xl pointer-events-none" />
             <div className="p-3.5 bg-rose-50 border border-rose-200/80 rounded-2xl text-rose-600 shadow-xs">
-              <Activity className="w-6 h-6 animate-pulse"/>
+              <Activity className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <p className="text-rose-700 text-xs font-semibold tracking-wider uppercase">Critical Alerts</p>
@@ -344,13 +344,13 @@ VICTIM TRANSCRIPT RECORD:
           {/* Active AI Module */}
           <div className="bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs transition-all hover:shadow-md flex items-center gap-4">
             <div className="p-3.5 bg-teal-50 border border-teal-200/70 rounded-2xl text-teal-600 shadow-xs">
-              <CheckCircle2 className="w-6 h-6"/>
+              <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
               <p className="text-slate-500 text-xs font-semibold tracking-wider uppercase">Samvedna [NHAA] AI Engine</p>
               <h2 className="text-sm font-bold text-teal-700 mt-1 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
-                Live on Port 8000
+                Live
               </h2>
             </div>
           </div>
@@ -358,7 +358,7 @@ VICTIM TRANSCRIPT RECORD:
           {/* Acoustic Engine Status */}
           <div className="bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs transition-all hover:shadow-md flex items-center gap-4">
             <div className="p-3.5 bg-indigo-50 border border-indigo-200/70 rounded-2xl text-indigo-600 shadow-xs">
-              <Volume2 className="w-6 h-6"/>
+              <Volume2 className="w-6 h-6" />
             </div>
             <div>
               <p className="text-slate-500 text-xs font-semibold tracking-wider uppercase">Vocal Acoustics</p>
@@ -371,7 +371,7 @@ VICTIM TRANSCRIPT RECORD:
 
         {/* Analytics Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Risk Graph Card (Light Theme Recharts) */}
           <div className="lg:col-span-1 bg-white/85 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs flex flex-col justify-between">
             <div>
@@ -392,8 +392,8 @@ VICTIM TRANSCRIPT RECORD:
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}} 
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
                     contentStyle={{
                       backgroundColor: '#ffffff',
                       border: '1px solid #e2e8f0',
@@ -443,7 +443,7 @@ VICTIM TRANSCRIPT RECORD:
                 </p>
               </div>
             </div>
-            
+
             <div className="overflow-y-auto p-0 flex-1 max-h-[420px]">
               <table className="min-w-full divide-y divide-slate-100 text-left">
                 <thead className="bg-slate-50/90 sticky top-0 backdrop-blur-sm z-10">
@@ -469,8 +469,8 @@ VICTIM TRANSCRIPT RECORD:
                       const isMod = a.riskLevel === 'MODERATE';
 
                       return (
-                        <tr 
-                          key={a.id} 
+                        <tr
+                          key={a.id}
                           onClick={() => handleInspectReport(a)}
                           className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                         >
@@ -494,12 +494,11 @@ VICTIM TRANSCRIPT RECORD:
                             </div>
                           </td>
                           <td className="px-5 py-3.5 whitespace-nowrap text-center">
-                            <span className={`px-2.5 py-0.5 inline-flex text-[11px] font-bold rounded-full uppercase tracking-wider shadow-2xs border ${
-                              isCritical ? 'bg-red-50 border-red-300 text-red-700 animate-pulse' : 
-                              isHigh ? 'bg-orange-50 border-orange-300 text-orange-700' : 
-                              isMod ? 'bg-amber-50 border-amber-300 text-amber-800' :
-                              'bg-emerald-50 border-emerald-300 text-emerald-700'
-                            }`}>
+                            <span className={`px-2.5 py-0.5 inline-flex text-[11px] font-bold rounded-full uppercase tracking-wider shadow-2xs border ${isCritical ? 'bg-red-50 border-red-300 text-red-700 animate-pulse' :
+                              isHigh ? 'bg-orange-50 border-orange-300 text-orange-700' :
+                                isMod ? 'bg-amber-50 border-amber-300 text-amber-800' :
+                                  'bg-emerald-50 border-emerald-300 text-emerald-700'
+                              }`}>
                               {a.riskLevel}
                             </span>
                           </td>
@@ -534,7 +533,7 @@ VICTIM TRANSCRIPT RECORD:
       {reportModalOpen && selectedIncident && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeInUp">
           <div className="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl space-y-6 relative max-h-[92vh] overflow-y-auto text-slate-800">
-            
+
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -579,7 +578,7 @@ VICTIM TRANSCRIPT RECORD:
               </div>
             ) : activeReport ? (
               <div className="space-y-6">
-                
+
                 {/* Victim Profile & Incident Metadata */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
                   <div>
@@ -627,15 +626,14 @@ VICTIM TRANSCRIPT RECORD:
 
                   <div className="flex flex-col items-center sm:items-end gap-2">
                     <span
-                      className={`text-sm font-bold px-4 py-1.5 rounded-full border shadow-xs ${
-                        activeReport.risk_level === 'CRITICAL'
-                          ? 'bg-red-50 border-red-300 text-red-700 animate-pulse'
-                          : activeReport.risk_level === 'HIGH'
+                      className={`text-sm font-bold px-4 py-1.5 rounded-full border shadow-xs ${activeReport.risk_level === 'CRITICAL'
+                        ? 'bg-red-50 border-red-300 text-red-700 animate-pulse'
+                        : activeReport.risk_level === 'HIGH'
                           ? 'bg-orange-50 border-orange-300 text-orange-700'
                           : activeReport.risk_level === 'MODERATE'
-                          ? 'bg-amber-50 border-amber-300 text-amber-800'
-                          : 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                      }`}
+                            ? 'bg-amber-50 border-amber-300 text-amber-800'
+                            : 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                        }`}
                     >
                       {activeReport.risk_level} RISK
                     </span>

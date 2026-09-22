@@ -18,9 +18,9 @@ export default function Login() {
       } else {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       }
-      
+
       const token = await userCredential.user.getIdToken();
-      
+
       // Sync with Node.js Gateway to save credentials/user to PostgreSQL
       await fetch('http://localhost:4000/api/users/sync', {
         method: 'POST',
@@ -40,18 +40,18 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-teal-50/20 to-indigo-50/25">
       <form onSubmit={handleAuth} className="bg-white/85 backdrop-blur-md border border-slate-200/80 p-8 rounded-2xl shadow-lg w-96 text-slate-800">
         <h2 className="text-2xl font-bold mb-6 text-center text-teal-700">
-          {isRegistering ? "Create Account" : "SIH Stress Portal"}
+          {isRegistering ? "Create Account" : "Samvedna"}
         </h2>
-        <input 
-          type="email" 
-          placeholder="Email address" 
+        <input
+          type="email"
+          placeholder="Email address"
           className="w-full mb-4 p-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-slate-900 placeholder-slate-400"
           value={email} onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <input 
-          type="password" 
-          placeholder="Password" 
+        <input
+          type="password"
+          placeholder="Password"
           className="w-full mb-6 p-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 text-slate-900 placeholder-slate-400"
           value={password} onChange={(e) => setPassword(e.target.value)}
           required
@@ -59,11 +59,11 @@ export default function Login() {
         <button type="submit" className="w-full bg-gradient-to-tr from-teal-500 via-blue-600 to-indigo-600 text-white p-3 rounded-lg font-bold hover:opacity-90 transition-opacity shadow-md shadow-teal-500/20">
           {isRegistering ? "Sign Up" : "Login"}
         </button>
-        
+
         <p className="mt-6 text-center text-sm text-slate-500">
           {isRegistering ? "Already have an account? " : "Don't have an account? "}
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setIsRegistering(!isRegistering)}
             className="text-teal-600 hover:text-teal-700 font-bold ml-1"
           >
